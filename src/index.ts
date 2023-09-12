@@ -1,19 +1,31 @@
-import { DefaultOptions, InnerOptions, Options } from './types'
+import { isFunction } from '@justichentai/is'
+import collectionErrorCallback from './action/collectionErrorCallback'
+import collectRejectError from './action/collectRejectError'
+import collectRuntimeError from './action/collectRuntimeError'
+import { Options } from './types'
 
-const defaults: DefaultOptions = {}
+export const errorCollection = (options: Options) => {
+  const { runtime, reject, consoleError } = options
 
-/**
- * 外部使用对象
- */
-export default class Utils {
-  public options: InnerOptions
-
-  constructor(options: Options) {
-    this.options = { ...defaults, ...options }
-    this.init()
+  // JS运行时错误和资源加载错误
+  if (runtime) {
+    isFunction(runtime)
+      ? collectRuntimeError(runtime)
+      : collectRuntimeError(collectionErrorCallback)
   }
 
-  init() {
-    return this
+  // promise 被 reject 并且错误信息没有被处理的时候，会抛出一个 unhandledrejection 事件
+  if (reject) {
+    isFunction(reject)
+      ? collectRejectError(reject)
+      : collectRejectError(collectionErrorCallback)
+  }
+
+  if (consoleError) {
+    isFunction(consoleError)
+      ? collectRejectError(consoleError)
+      : collectRejectError(collectionErrorCallback)
   }
 }
+
+export default errorCollection
